@@ -1,0 +1,7 @@
+/vendor/
+/.phpbench/
+/.idea/
+/bench.sqlite
+/bench.sqlite-journal
+/bench.sqlite-wal
+/bench.sqlite-shm

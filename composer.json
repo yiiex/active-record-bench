@@ -1,0 +1,40 @@
+{
+    "name": "galtsevt/ar-benchmark",
+    "description": "Active Record performance benchmark: Eloquent vs Yii2 vs Yiisoft vs yii1x",
+    "type": "project",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "php": "^8.4",
+        "illuminate/database": "^13.0",
+        "phpbench/phpbench": "^1.7",
+        "yiisoft/active-record": "^1.1",
+        "yiisoft/cache": "^3.2",
+        "yiisoft/db-sqlite": "^2.0",
+        "yiisoft/yii2": "^2.0.55",
+        "yii1x/active-record": "^0.2.2"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ],
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Bench\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Bench\\Benchmarks\\": "benchmarks/"
+        }
+    }
+}
