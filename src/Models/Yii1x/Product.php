@@ -19,4 +19,11 @@ class Product extends ActiveRecord
             'categories' => [self::MANY_MANY, Category::class, 'product_category(product_id, category_id)'],
         ];
     }
+
+    public function active(): static
+    {
+        $this->getDbCriteria()->compare($this->getTableAlias() . '.is_active', 1);
+
+        return $this;
+    }
 }

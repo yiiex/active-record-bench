@@ -35,16 +35,17 @@ final class Seeder
 
     private function seed(): void
     {
-        // Volumes are intentionally small for the initial smoke test. Scale up later.
-        $this->customers  = (int) (getenv('SEED_CUSTOMERS') ?: 100);
-        $this->products   = (int) (getenv('SEED_PRODUCTS') ?: 200);
-        $this->categories = (int) (getenv('SEED_CATEGORIES') ?: 30);
-        $orders           = (int) (getenv('SEED_ORDERS') ?: 1000);
-        $comments         = (int) (getenv('SEED_COMMENTS') ?: 2000);
+        $this->customers = (int)(getenv('SEED_CUSTOMERS') ?: 2500);
+        $this->products = (int)(getenv('SEED_PRODUCTS') ?: 1000);
+        $this->categories = (int)(getenv('SEED_CATEGORIES') ?: 50);
+        $orders = (int)(getenv('SEED_ORDERS') ?: 25000);
 
         mt_srand(20240901);
 
         $this->pdo->exec(file_get_contents(__DIR__ . '/schema.sql'));
+
+        // The insert benchmark is write-only; always start it from an empty table.
+        $this->pdo->exec('DELETE FROM bench_rows');
 
         $this->pdo->beginTransaction();
 
@@ -54,12 +55,18 @@ final class Seeder
             $this->seedProducts();
             $this->seedProductCategory();
             $this->seedOrders($orders);
-            $this->seedComments($comments);
+            $this->seedComments();
             $this->pdo->commit();
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             throw $e;
         }
+
+        // Populate optimizer statistics (sqlite_stat1) so the query planner
+        // picks the right indexes for the benchmark queries.
+        $this->pdo->exec('ANALYZE');
 
         $this->report();
     }
@@ -73,7 +80,7 @@ final class Seeder
                 "Category $i",
                 "category-$i",
                 "Description for category $i",
-                $i > 3 ? (int) floor($i / 3) : null,
+                $i > 3 ? (int)floor($i / 3) : null,
                 $i,
                 1,
             ];
@@ -187,14 +194,20 @@ final class Seeder
 
         $items = [];
         $payments = [];
+        $shipments = [];
+        $events = [];
+        $itemId = 1;
+        $eventId = 1;
+
         for ($i = 1; $i <= $count; $i++) {
-            $itemId = ($i - 1) * 4 + 1;
-            for ($k = 0; $k < 4; $k++) {
+            $itemCount = mt_rand(5, 15);
+            for ($k = 0; $k < $itemCount; $k++) {
                 $price = $this->money(100, 50000);
                 $discount = $this->money(0, 1000);
                 $qty = mt_rand(1, 5);
-                $items[] = [$itemId + $k, $i, mt_rand(1, $this->products), $qty, $price, $discount, ($price - $discount) * $qty];
+                $items[] = [$itemId++, $i, mt_rand(1, $this->products), $qty, $price, $discount, ($price - $discount) * $qty];
             }
+
             $payments[] = [
                 $i,
                 $i,
@@ -205,25 +218,55 @@ final class Seeder
                 ['USD', 'EUR', 'GBP'][$i % 3],
                 $this->date($i + 1),
             ];
+
+            $shipments[] = [
+                $i,
+                $i,
+                ['UPS', 'FedEx', 'DHL', 'USPS'][$i % 4],
+                sprintf('TRK-%010d', $i),
+                $this->date($i + 1),
+                $i % 3 !== 0 ? $this->date($i + 3) : null,
+            ];
+
+            $eventCount = mt_rand(3, 8);
+            for ($k = 0; $k < $eventCount; $k++) {
+                $events[] = [
+                    $eventId++,
+                    $i,
+                    ['created', 'paid', 'shipped', 'delivered', 'cancelled'][($i + $k) % 5],
+                    $k === 0 ? null : "Event $k",
+                    $this->date($i + $k),
+                ];
+            }
         }
+
         $this->insertBatch('order_items', ['id', 'order_id', 'product_id', 'quantity', 'price', 'discount', 'total'], $items);
         $this->insertBatch('payments', ['id', 'order_id', 'amount', 'method', 'status', 'transaction_id', 'currency', 'paid_at'], $payments);
+        $this->insertBatch('shipments', ['id', 'order_id', 'carrier', 'tracking_number', 'shipped_at', 'delivered_at'], $shipments);
+        $this->insertBatch('order_events', ['id', 'order_id', 'type', 'note', 'created_at'], $events);
     }
 
-    private function seedComments(int $count): void
+    private function seedComments(): void
     {
-        $this->insertRows($count, function (int $i) {
-            return [
-                $i,
-                mt_rand(1, $this->products),
-                mt_rand(1, $this->customers),
-                "Comment body $i",
-                mt_rand(1, 5),
-                1,
-                mt_rand(0, 100),
-                $this->date($i),
-            ];
-        }, 'comments', ['id', 'product_id', 'customer_id', 'body', 'rating', 'is_approved', 'helpful_count', 'created_at']);
+        $comments = [];
+        $id = 1;
+        for ($p = 1; $p <= $this->products; $p++) {
+            $n = mt_rand(5, 15);
+            for ($k = 0; $k < $n; $k++) {
+                $comments[] = [
+                    $id,
+                    $p,
+                    mt_rand(1, $this->customers),
+                    "Comment body $id",
+                    mt_rand(1, 5),
+                    1,
+                    mt_rand(0, 100),
+                    $this->date($id),
+                ];
+                $id++;
+            }
+        }
+        $this->insertBatch('comments', ['id', 'product_id', 'customer_id', 'body', 'rating', 'is_approved', 'helpful_count', 'created_at'], $comments);
     }
 
     private function date(int $i): string
@@ -264,24 +307,28 @@ final class Seeder
         }
 
         $rowPlaceholder = '(' . implode(',', array_fill(0, count($columns), '?')) . ')';
-        $sql = 'INSERT INTO ' . $table . ' (' . implode(',', $columns) . ') VALUES '
-            . implode(',', array_fill(0, count($rows), $rowPlaceholder));
 
-        $stmt = $this->pdo->prepare($sql);
-        $values = [];
-        foreach ($rows as $row) {
-            foreach ($row as $value) {
-                $values[] = $value;
+        // Chunk internally to stay under SQLite's max-variable limit.
+        foreach (array_chunk($rows, 500) as $chunk) {
+            $sql = 'INSERT INTO ' . $table . ' (' . implode(',', $columns) . ') VALUES '
+                . implode(',', array_fill(0, count($chunk), $rowPlaceholder));
+
+            $stmt = $this->pdo->prepare($sql);
+            $values = [];
+            foreach ($chunk as $row) {
+                foreach ($row as $value) {
+                    $values[] = $value;
+                }
             }
+            $stmt->execute($values);
         }
-        $stmt->execute($values);
     }
 
     private function report(): void
     {
-        $tables = ['customers', 'addresses', 'products', 'categories', 'orders', 'order_items', 'payments', 'comments', 'product_category'];
+        $tables = ['customers', 'addresses', 'products', 'categories', 'orders', 'order_items', 'payments', 'shipments', 'order_events', 'comments', 'product_category'];
         foreach ($tables as $table) {
-            $count = (int) $this->pdo->query("SELECT COUNT(*) FROM $table")->fetchColumn();
+            $count = (int)$this->pdo->query("SELECT COUNT(*) FROM $table")->fetchColumn();
             printf("%-16s %s\n", $table, number_format($count));
         }
     }

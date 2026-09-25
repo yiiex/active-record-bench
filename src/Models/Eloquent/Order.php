@@ -18,4 +18,24 @@ class Order extends Model
     {
         return $this->belongsTo(Customer::class, 'customer_id');
     }
+
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'order_id');
+    }
+
+    public function shipment()
+    {
+        return $this->hasOne(Shipment::class, 'order_id');
+    }
+
+    public function events()
+    {
+        return $this->hasMany(OrderEvent::class, 'order_id');
+    }
 }

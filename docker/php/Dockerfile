@@ -16,6 +16,10 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
+# The mounted repo is owned by the host user, git (run as root) needs this to
+# read the branch for phpbench metadata.
+RUN git config --global --add safe.directory /app
+
 WORKDIR /app
 
 COPY docker/php/conf.d/zz-bench.ini /usr/local/etc/php/conf.d/zz-bench.ini

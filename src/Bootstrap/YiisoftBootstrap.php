@@ -21,13 +21,11 @@ final class YiisoftBootstrap
         }
         self::$booted = true;
 
-        $cache = new ArrayCache();
-
-        $connection = new Connection(
-            new Driver('sqlite:' . $dbPath),
-            new SchemaCache($cache),
-        );
-
+        // Schema cache disabled: keeps the comparison fair (the other ORMs
+        // have no schema cache in these benchmarks).
+        $schemaCache = new SchemaCache(new ArrayCache());
+        $schemaCache->setEnabled(false);
+        $connection = new Connection(new Driver('sqlite:' . $dbPath), $schemaCache);
         ConnectionProvider::set($connection);
     }
 }

@@ -6,6 +6,7 @@ namespace Bench\Models\Yiisoft;
 
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\ActiveRecordInterface;
 
 class Product extends ActiveRecord
 {
@@ -31,6 +32,11 @@ class Product extends ActiveRecord
     public function tableName(): string
     {
         return '{{%products}}';
+    }
+
+    public static function query(ActiveRecordInterface|string|null $modelClass = null): ActiveQueryInterface
+    {
+        return new ProductQuery($modelClass ?? static::class);
     }
 
     public function relationQuery(string $name): ActiveQueryInterface

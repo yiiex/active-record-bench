@@ -17,6 +17,10 @@ class Order extends ActiveRecord
     {
         return [
             'customer' => [self::BELONGS_TO, Customer::class, 'customer_id'],
+            'items' => [self::HAS_MANY, OrderItem::class, 'order_id'],
+            'payment' => [self::HAS_ONE, Payment::class, 'order_id'],
+            'shipment' => [self::HAS_ONE, Shipment::class, 'order_id'],
+            'events' => [self::HAS_MANY, OrderEvent::class, 'order_id'],
         ];
     }
 }

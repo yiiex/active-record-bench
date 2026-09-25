@@ -1,6 +1,10 @@
 /vendor/
 /.phpbench/
+/.phpunit.cache/
 /.idea/
+/dump/
+/docs/
+/results/
 /bench.sqlite
 /bench.sqlite-journal
 /bench.sqlite-wal

@@ -18,4 +18,14 @@ class Customer extends Model
     {
         return $this->hasMany(Order::class, 'customer_id');
     }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class, 'customer_id');
+    }
+
+    public function scopeActive($query)
+    {
+        $query->where('status', 'active');
+    }
 }

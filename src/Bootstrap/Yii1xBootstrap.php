@@ -20,9 +20,7 @@ final class Yii1xBootstrap
         self::$booted = true;
 
         $connection = new DbConnection('sqlite:' . $dbPath, '', '', 'default');
-
         $container = new SimpleContainer(['default' => $connection]);
-
         ORMContext::bootstrap($container);
     }
 }

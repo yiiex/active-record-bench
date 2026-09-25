@@ -1,5 +1,5 @@
 {
-    "name": "galtsevt/ar-benchmark",
+    "name": "yiiex/active-record-bench",
     "description": "Active Record performance benchmark: Eloquent vs Yii2 vs Yiisoft vs yii1x",
     "type": "project",
     "license": "MIT",
@@ -34,7 +34,11 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Bench\\Benchmarks\\": "benchmarks/"
+            "Bench\\Benchmarks\\": "benchmarks/",
+            "Bench\\Tests\\": "tests/"
         }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.3"
     }
 }

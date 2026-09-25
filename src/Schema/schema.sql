@@ -109,6 +109,27 @@ CREATE TABLE IF NOT EXISTS payments
     FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS shipments
+(
+    id              INTEGER PRIMARY KEY,
+    order_id        INTEGER NOT NULL,
+    carrier         TEXT    NOT NULL,
+    tracking_number TEXT    NOT NULL,
+    shipped_at      TEXT    NOT NULL,
+    delivered_at    TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS order_events
+(
+    id         INTEGER PRIMARY KEY,
+    order_id   INTEGER NOT NULL,
+    type       TEXT    NOT NULL,
+    note       TEXT,
+    created_at TEXT    NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS comments
 (
     id            INTEGER PRIMARY KEY,
@@ -132,9 +153,26 @@ CREATE TABLE IF NOT EXISTS product_category
     FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE CASCADE
 );
 
+-- Write-only table for the insert benchmark, so that the tables used by the
+-- read benchmarks keep their seeded size across a benchmark run.
+CREATE TABLE IF NOT EXISTS bench_rows
+(
+    id         INTEGER PRIMARY KEY,
+    name       TEXT NOT NULL,
+    email      TEXT NOT NULL,
+    phone      TEXT,
+    country    TEXT,
+    created_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_orders_customer     ON orders (customer_id);
+-- NOTE: no index on orders(status): status is low-cardinality (4 values) and a
+-- non-selective index makes SQLite pick a bad plan for ORDER BY total queries.
+CREATE INDEX IF NOT EXISTS idx_orders_total        ON orders (total);
 CREATE INDEX IF NOT EXISTS idx_order_items_order   ON order_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product ON order_items (product_id);
 CREATE INDEX IF NOT EXISTS idx_comments_product    ON comments (product_id);
 CREATE INDEX IF NOT EXISTS idx_comments_customer   ON comments (customer_id);
 CREATE INDEX IF NOT EXISTS idx_payments_order      ON payments (order_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_order     ON shipments (order_id);
+CREATE INDEX IF NOT EXISTS idx_order_events_order  ON order_events (order_id);

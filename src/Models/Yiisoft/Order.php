@@ -35,6 +35,10 @@ class Order extends ActiveRecord
     {
         return match ($name) {
             'customer' => $this->hasOne(Customer::class, ['id' => 'customer_id']),
+            'items' => $this->hasMany(OrderItem::class, ['order_id' => 'id']),
+            'payment' => $this->hasOne(Payment::class, ['order_id' => 'id']),
+            'shipment' => $this->hasOne(Shipment::class, ['order_id' => 'id']),
+            'events' => $this->hasMany(OrderEvent::class, ['order_id' => 'id']),
             default => parent::relationQuery($name),
         };
     }

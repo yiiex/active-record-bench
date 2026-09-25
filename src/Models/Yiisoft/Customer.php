@@ -6,6 +6,7 @@ namespace Bench\Models\Yiisoft;
 
 use Yiisoft\ActiveRecord\ActiveQueryInterface;
 use Yiisoft\ActiveRecord\ActiveRecord;
+use Yiisoft\ActiveRecord\ActiveRecordInterface;
 
 class Customer extends ActiveRecord
 {
@@ -26,10 +27,16 @@ class Customer extends ActiveRecord
         return '{{%customers}}';
     }
 
+    public static function query(ActiveRecordInterface|string|null $modelClass = null): ActiveQueryInterface
+    {
+        return new CustomerQuery($modelClass ?? static::class);
+    }
+
     public function relationQuery(string $name): ActiveQueryInterface
     {
         return match ($name) {
             'orders' => $this->hasMany(Order::class, ['customer_id' => 'id']),
+            'addresses' => $this->hasMany(Address::class, ['customer_id' => 'id']),
             default => parent::relationQuery($name),
         };
     }

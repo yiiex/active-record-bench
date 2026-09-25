@@ -3,5 +3,47 @@
     "runner.bootstrap": "benchmark_bootstrap.php",
     "runner.path": "benchmarks",
     "runner.file_pattern": "*Bench.php",
-    "runner.retry_threshold": 5
+    "runner.retry_threshold": 5,
+    "report.generators": {
+        "summary": {
+            "generator": "expression",
+            "cols": ["orm", "benchmark", "subject", "set", "revs", "its", "mem_peak", "mem_final", "mode", "rstdev"],
+            "expressions": {
+                "orm": "join(\"\", first(subject_groups))",
+                "mem_final": "max(result_mem_final) as memory"
+            }
+        },
+        "bysubject": {
+            "generator": "expression",
+            "break": ["subject"],
+            "cols": ["orm", "benchmark", "set", "revs", "its", "mem_peak", "mem_final", "mode", "rstdev"],
+            "expressions": {
+                "orm": "join(\"\", first(subject_groups))",
+                "mem_final": "max(result_mem_final) as memory"
+            }
+        },
+        "ormchart": {
+            "generator": "component",
+            "partition": ["benchmark_name"],
+            "components": [
+                {
+                    "title": "{{ first(frame.benchmark_name) }} — time by ORM",
+                    "component": "bar_chart_aggregate",
+                    "x_partition": ["subject_name"],
+                    "bar_partition": ["join(\"\", subject_groups)"],
+                    "y_expr": "mode(partition['result_time_avg'])",
+                    "y_error_margin": "stdev(partition['result_time_avg'])",
+                    "y_axes_label": "yValue as time precision 1"
+                },
+                {
+                    "title": "{{ first(frame.benchmark_name) }} — memory by ORM",
+                    "component": "bar_chart_aggregate",
+                    "x_partition": ["subject_name"],
+                    "bar_partition": ["join(\"\", subject_groups)"],
+                    "y_expr": "mode(partition['result_mem_peak'])",
+                    "y_axes_label": "yValue as memory precision 1"
+                }
+            ]
+        }
+    }
 }

@@ -13,6 +13,11 @@ class Product extends ActiveRecord
         return 'products';
     }
 
+    public static function find()
+    {
+        return new ProductQuery(static::class);
+    }
+
     public function getCategories()
     {
         return $this->hasMany(Category::class, ['id' => 'category_id'])

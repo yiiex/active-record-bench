@@ -13,8 +13,18 @@ class Customer extends ActiveRecord
         return 'customers';
     }
 
+    public static function find()
+    {
+        return new CustomerQuery(static::class);
+    }
+
     public function getOrders()
     {
         return $this->hasMany(Order::class, ['customer_id' => 'id']);
+    }
+
+    public function getAddresses()
+    {
+        return $this->hasMany(Address::class, ['customer_id' => 'id']);
     }
 }

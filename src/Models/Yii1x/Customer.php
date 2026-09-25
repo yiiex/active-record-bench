@@ -17,6 +17,14 @@ class Customer extends ActiveRecord
     {
         return [
             'orders' => [self::HAS_MANY, Order::class, 'customer_id'],
+            'addresses' => [self::HAS_MANY, Address::class, 'customer_id'],
         ];
+    }
+
+    public function active(): static
+    {
+        $this->getDbCriteria()->compare($this->getTableAlias() . '.status', 'active');
+
+        return $this;
     }
 }
