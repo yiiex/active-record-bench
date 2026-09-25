@@ -1,6 +1,6 @@
 {
     "$schema": "./vendor/phpbench/phpbench/schema/phpbench.json",
-    "runner.bootstrap": "benchmark_bootstrap.php",
+    "runner.bootstrap": "bootstrap.php",
     "runner.path": "benchmarks",
     "runner.file_pattern": "*Bench.php",
     "runner.retry_threshold": 5,

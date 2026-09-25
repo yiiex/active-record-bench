@@ -121,7 +121,7 @@ benchmarks/
                              items via WHERE IN and via JOIN
     QueryBuilderBench.php  — complex nested query (build + execute)
     ScopeBench.php         — nested eager with/without scopes and via a raw where
-benchmark_bootstrap.php    — phpbench runner bootstrap
+bootstrap.php              — phpbench runner bootstrap
 seed.php                   — seeds the database
 dump/                      — local-only scripts to dump SQL / inspect memory (gitignored)
 phpbench.json              — phpbench config and custom report generators
